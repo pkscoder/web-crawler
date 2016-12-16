@@ -1,18 +1,22 @@
 var request = require('request'),
     cheerio = require('cheerio'),
     URL = require('url-parse'),
-    json2csv = require('json2csv'),
-    fs = require('file-system');
+    csv = require('ya-csv');
 
 var ARGS = process.argv,
     LIMIT = 5;
 
 var Crawlwer = {
     urlObj: '',
+    fileName: '',
     pagesVisited: {},
     pagesToVisit: [],
-    dataToCsv: [],
     counter: 0,
+
+    saveToCsv: function(data) {
+        var csvFile = csv.createCsvFileWriter(Crawlwer.fileName, { 'flags': 'a' });
+        csvFile.writeRecord(data);
+    },
 
     collectInternalLinks: function($) {
         var urlObj = Crawlwer.urlObj,
@@ -64,17 +68,15 @@ var Crawlwer = {
 
         request(url, function(error, response, body) {
             Crawlwer.counter--;
-            Crawlwer.dataToCsv.push({
-                url: url,
-                visited: true,
-                status: response ? response.statusCode : 404
-            });
+            var statusCode = response ? response.statusCode : 404;
 
-            if (!response || response.statusCode !== 200) { // Check status code (200 is HTTP OK)
+            Crawlwer.saveToCsv([url, (statusCode === 200), statusCode]);
+
+            if (statusCode !== 200) { // Check status code (200 is HTTP OK)
                 return;
             }
 
-            console.log('Status code:', response.statusCode);
+            console.log('Status code:', statusCode);
 
             var $ = cheerio.load(body); // Parse the document body
 
@@ -91,17 +93,8 @@ var Crawlwer = {
             }
 
         } else if (!Crawlwer.counter) {
-            var fields = ['url', 'visited', 'status'],
-                fileName = 'csv/' + (ARGS[3] ? ARGS[3] : 'crawler') + '.csv';
-
-            json2csv({ data: Crawlwer.dataToCsv, fields: fields }, function(err, csv) {
-                if (err) console.error(err);
-                fs.writeFile(fileName, csv, function(err) {
-                    if (err) throw err;
-                    console.log('file saved');
-                    return;
-                });
-            });
+            console.log('Crawling completed');
+            return;
         }
     }
 };
@@ -111,6 +104,13 @@ function startCrawler() {
 
     if (urlObj && urlObj.origin) {
         Crawlwer.urlObj = urlObj;
+        Crawlwer.fileName = 'csv/' + (ARGS[3] ? ARGS[3] : 'crawler') + '.csv';
+
+        var csvFile = csv.createCsvFileWriter(Crawlwer.fileName),
+            fields = ['url', 'visited', 'status'];
+
+        csvFile.writeRecord(fields);
+
         Crawlwer.pagesToVisit = [urlObj.href];
 
         return Crawlwer.crawl();

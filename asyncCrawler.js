@@ -1,9 +1,8 @@
 var request = require('request'),
     cheerio = require('cheerio'),
     URL = require('url-parse'),
-    json2csv = require('json2csv'),
-    fs = require('file-system'),
-    async = require('async');
+    async = require('async'),
+    csv = require('ya-csv');
 
 var ARGS = process.argv,
     LIMIT = 5;
@@ -14,17 +13,15 @@ var asyncQueue = async.queue(function(task, callback) {
     console.log('Visiting page:', url);
 
     request(url, function(error, response, body) {
-        Crawlwer.dataToCsv.push({
-            url: url,
-            visited: true,
-            status: response ? response.statusCode : 404
-        });
+        var statusCode = response ? response.statusCode : 404;
 
-        if (!response || response.statusCode !== 200) { // Check status code (200 is HTTP OK)
+        Crawlwer.saveToCsv([url, (statusCode === 200), statusCode]);
+
+        if (statusCode !== 200) { // Check status code (200 is HTTP OK)
             return;
         }
 
-        console.log('Status code:', response.statusCode);
+        console.log('Status code:', statusCode);
 
         var $ = cheerio.load(body); // Parse the document body
 
@@ -35,9 +32,14 @@ var asyncQueue = async.queue(function(task, callback) {
 
 var Crawlwer = {
     urlObj: '',
+    fileName: '',
     pagesVisited: {},
     pagesToVisit: [],
-    dataToCsv: [],
+
+    saveToCsv: function(data) {
+        var csvFile = csv.createCsvFileWriter(Crawlwer.fileName, { 'flags': 'a' });
+        csvFile.writeRecord(data);
+    },
 
     collectInternalLinks: function($) {
         var urlObj = Crawlwer.urlObj,
@@ -53,7 +55,7 @@ var Crawlwer = {
             if (!(url in pagesVisited) && Crawlwer.pagesToVisit.indexOf(url) < 0) {
                 count++;
                 Crawlwer.pagesToVisit.push(url);
-            }else {
+            } else {
                 isPresent++;
             }
         });
@@ -64,16 +66,16 @@ var Crawlwer = {
             if (url.indexOf(urlObj.hostname) >= 0 && !(url in pagesVisited) && Crawlwer.pagesToVisit.indexOf(url) < 0) {
                 count++;
                 Crawlwer.pagesToVisit.push(url);
-            }else{
+            } else {
                 isPresent++;
             }
         });
 
-        if(isPresent){
+        if (isPresent) {
             console.log('Found ', isPresent, ' internal links on page either to be visited or already visited')
         }
 
-        if(count){
+        if (count) {
             console.log('Found ', count, ' internal links on page are to be visitd');
         }
 
@@ -83,7 +85,7 @@ var Crawlwer = {
 
     visitPage: function(url) {
         Crawlwer.pagesVisited[url] = true; // Add page to our set
-        asyncQueue.push({url: url});
+        asyncQueue.push({ url: url });
     },
 
     crawl: function() {
@@ -96,17 +98,8 @@ var Crawlwer = {
 
         } else {
             return asyncQueue.drain = function() {
-                var fields = ['url', 'visited', 'status'],
-                    fileName = 'csv/' + (ARGS[3] ? ARGS[3] : 'asyncCrawler') + '.csv';
-
-                json2csv({ data: Crawlwer.dataToCsv, fields: fields }, function(err, csv) {
-                    if (err) console.error(err);
-                    fs.writeFile(fileName, csv, function(err) {
-                        if (err) throw err;
-                        console.log('file saved');
-                        return;
-                    });
-                });
+                console.log('Crawling completed');
+                return;
             }
         }
     }
@@ -117,6 +110,13 @@ function startCrawler() {
 
     if (urlObj && urlObj.origin) {
         Crawlwer.urlObj = urlObj;
+        Crawlwer.fileName = 'csv/' + (ARGS[3] ? ARGS[3] : 'asyncCrawler') + '.csv';
+
+        var csvFile = csv.createCsvFileWriter(Crawlwer.fileName),
+            fields = ['url', 'visited', 'status'];
+
+        csvFile.writeRecord(fields);
+
         Crawlwer.pagesToVisit = [urlObj.href];
 
         return Crawlwer.crawl();
