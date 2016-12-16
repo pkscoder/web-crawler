@@ -19,8 +19,6 @@
   "dependencies": {
     "async": "^2.1.4",
     "cheerio": "^0.22.0",
-    "file-system": "^2.2.2",
-    "json2csv": "^3.7.3",
     "request": "^2.79.0",
     "url-parse": "^1.1.7",
     "ya-csv": "^0.10.1"
