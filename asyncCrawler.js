@@ -121,7 +121,7 @@ function startCrawler() {
 
         return Crawlwer.crawl();
     } else {
-        console.error('Correct format: node crawler.js <http://www.example.com> <csv file name>');
+        console.error('Correct format: node crawler.js <http://www.example.com> <csv_file_name>');
         return;
 
     }
