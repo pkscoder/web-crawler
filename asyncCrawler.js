@@ -110,7 +110,7 @@ function startCrawler() {
 
     if (urlObj && urlObj.origin) {
         Crawlwer.urlObj = urlObj;
-        Crawlwer.fileName = 'csv/' + (ARGS[3] ? ARGS[3] : 'asyncCrawler') + '.csv';
+        Crawlwer.fileName = (ARGS[3] ? ARGS[3] : 'asyncCrawler') + '.csv';
 
         var csvFile = csv.createCsvFileWriter(Crawlwer.fileName),
             fields = ['url', 'visited', 'status'];

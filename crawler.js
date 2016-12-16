@@ -104,7 +104,7 @@ function startCrawler() {
 
     if (urlObj && urlObj.origin) {
         Crawlwer.urlObj = urlObj;
-        Crawlwer.fileName = 'csv/' + (ARGS[3] ? ARGS[3] : 'crawler') + '.csv';
+        Crawlwer.fileName = (ARGS[3] ? ARGS[3] : 'crawler') + '.csv';
 
         var csvFile = csv.createCsvFileWriter(Crawlwer.fileName),
             fields = ['url', 'visited', 'status'];
