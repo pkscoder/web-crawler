@@ -94,6 +94,7 @@ var Crawlwer = {
 
         } else if (!Crawlwer.counter) {
             console.log('Crawling completed');
+            console.log('Data saved in---', Crawlwer.fileName);
             return;
         }
     }

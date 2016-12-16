@@ -99,6 +99,7 @@ var Crawlwer = {
         } else {
             return asyncQueue.drain = function() {
                 console.log('Crawling completed');
+                console.log('Data saved in---', Crawlwer.fileName);
                 return;
             }
         }
