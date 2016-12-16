@@ -1,0 +1,27 @@
+{
+  "name": "web-crawler",
+  "version": "1.0.0",
+  "description": "script for crawling desired website",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/priyamkrshaw/web-crawler.git"
+  },
+  "keywords": [
+    "crawler",
+    "web-crawler"
+  ],
+  "author": "Priyam Kumar Shaw",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/priyamkrshaw/web-crawler/issues"
+  },
+  "homepage": "https://github.com/priyamkrshaw/web-crawler#readme",
+  "dependencies": {
+    "async": "^2.1.4",
+    "cheerio": "^0.22.0",
+    "file-system": "^2.2.2",
+    "json2csv": "^3.7.3",
+    "request": "^2.79.0",
+    "url-parse": "^1.1.7"
+  }
+}
