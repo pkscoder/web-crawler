@@ -6,7 +6,7 @@ var request = require('request'),
 var ARGS = process.argv,
     LIMIT = 5;
 
-var Crawlwer = {
+var Crawler = {
     urlObj: '',
     fileName: '',
     pagesVisited: {},
@@ -14,24 +14,24 @@ var Crawlwer = {
     counter: 0,
 
     saveToCsv: function(data) {
-        var csvFile = csv.createCsvFileWriter(Crawlwer.fileName, { 'flags': 'a' });
+        var csvFile = csv.createCsvFileWriter(Crawler.fileName, { 'flags': 'a' });
         csvFile.writeRecord(data);
     },
 
     collectInternalLinks: function($) {
-        var urlObj = Crawlwer.urlObj,
+        var urlObj = Crawler.urlObj,
             relativeLinks = $('a[href^="/"]') || [],
             absoluteLinks = $("a[href^='http']") || [],
-            pagesVisited = Crawlwer.pagesVisited,
+            pagesVisited = Crawler.pagesVisited,
             count = 0,
             isPresent = 0;
 
         relativeLinks.each(function() {
             var url = urlObj.origin + $(this).attr('href');
 
-            if (!(url in pagesVisited) && Crawlwer.pagesToVisit.indexOf(url) < 0) {
+            if (!(url in pagesVisited) && Crawler.pagesToVisit.indexOf(url) < 0) {
                 count++;
-                Crawlwer.pagesToVisit.push(url);
+                Crawler.pagesToVisit.push(url);
             } else {
                 isPresent++;
             }
@@ -40,9 +40,9 @@ var Crawlwer = {
         absoluteLinks.each(function() {
             var url = $(this).attr('href');
 
-            if (url.indexOf(urlObj.hostname) >= 0 && !(url in pagesVisited) && Crawlwer.pagesToVisit.indexOf(url) < 0) {
+            if (url.indexOf(urlObj.hostname) >= 0 && !(url in pagesVisited) && Crawler.pagesToVisit.indexOf(url) < 0) {
                 count++;
-                Crawlwer.pagesToVisit.push(url);
+                Crawler.pagesToVisit.push(url);
             } else {
                 isPresent++;
             }
@@ -57,20 +57,20 @@ var Crawlwer = {
         }
 
         console.log('-----------------------------------------------------------------------------');
-        Crawlwer.crawl();
+        Crawler.crawl();
     },
 
     visitPage: function(url) {
-        Crawlwer.pagesVisited[url] = true; // Add page to our set
-        Crawlwer.counter++;
+        Crawler.pagesVisited[url] = true; // Add page to our set
+        Crawler.counter++;
 
         console.log('Visiting page:', url);
 
         request(url, function(error, response, body) {
-            Crawlwer.counter--;
+            Crawler.counter--;
             var statusCode = response ? response.statusCode : 404;
 
-            Crawlwer.saveToCsv([url, (statusCode === 200), statusCode]);
+            Crawler.saveToCsv([url, (statusCode === 200), statusCode]);
 
             if (statusCode !== 200) { // Check status code (200 is HTTP OK)
                 return;
@@ -80,21 +80,21 @@ var Crawlwer = {
 
             var $ = cheerio.load(body); // Parse the document body
 
-            Crawlwer.collectInternalLinks($);
+            Crawler.collectInternalLinks($);
         });
     },
 
     crawl: function() {
-        if (Crawlwer.pagesToVisit.length) { // New page we haven't visited
-            var nextPage = Crawlwer.pagesToVisit.shift();
-            Crawlwer.visitPage(nextPage);
-            while (Crawlwer.pagesToVisit.length && Crawlwer.counter < LIMIT) {
-                Crawlwer.crawl()
+        if (Crawler.pagesToVisit.length) { // New page we haven't visited
+            var nextPage = Crawler.pagesToVisit.shift();
+            Crawler.visitPage(nextPage);
+            while (Crawler.pagesToVisit.length && Crawler.counter < LIMIT) {
+                Crawler.crawl()
             }
 
-        } else if (!Crawlwer.counter) {
+        } else if (!Crawler.counter) {
             console.log('Crawling completed');
-            console.log('Data saved in---', Crawlwer.fileName);
+            console.log('Data saved in---', Crawler.fileName);
             return;
         }
     }
@@ -104,17 +104,17 @@ function startCrawler() {
     var urlObj = new URL(ARGS[2]);
 
     if (urlObj && urlObj.origin) {
-        Crawlwer.urlObj = urlObj;
-        Crawlwer.fileName = (ARGS[3] ? ARGS[3] : 'crawler') + '.csv';
+        Crawler.urlObj = urlObj;
+        Crawler.fileName = (ARGS[3] ? ARGS[3] : 'crawler') + '.csv';
 
-        var csvFile = csv.createCsvFileWriter(Crawlwer.fileName),
+        var csvFile = csv.createCsvFileWriter(Crawler.fileName),
             fields = ['url', 'visited', 'status'];
 
         csvFile.writeRecord(fields);
 
-        Crawlwer.pagesToVisit = [urlObj.href];
+        Crawler.pagesToVisit = [urlObj.href];
 
-        return Crawlwer.crawl();
+        return Crawler.crawl();
     } else {
         console.error('Correct format: node crawler.js <http://www.example.com> <csv_file_name>');
         return;
