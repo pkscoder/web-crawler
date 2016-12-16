@@ -2,7 +2,9 @@ var request = require('request'),
     cheerio = require('cheerio'),
     URL = require('url-parse'),
     async = require('async'),
-    csv = require('ya-csv');
+    csv = require('ya-csv'),
+    bunyan = require("bunyan"),
+    log = bunyan.createLogger({ name: 'asyncCrawler' });
 
 var ARGS = process.argv,
     LIMIT = 5;
@@ -10,7 +12,7 @@ var ARGS = process.argv,
 var asyncQueue = async.queue(function(task, callback) {
     var url = task.url;
 
-    console.log('Visiting page:', url);
+    log.info('Visiting page:', url);
 
     request(url, function(error, response, body) {
         var statusCode = response ? response.statusCode : 404;
@@ -21,7 +23,7 @@ var asyncQueue = async.queue(function(task, callback) {
             return;
         }
 
-        console.log('Status code:', statusCode);
+        log.info('Status code:', statusCode);
 
         var $ = cheerio.load(body); // Parse the document body
 
@@ -72,14 +74,13 @@ var Crawler = {
         });
 
         if (isPresent) {
-            console.log('Found ', isPresent, ' internal links on page either to be visited or already visited')
+            log.info('Found ', isPresent, ' internal links on page either to be visited or already visited')
         }
 
         if (count) {
-            console.log('Found ', count, ' internal links on page are to be visitd');
+            log.info('Found ', count, ' internal links on page are to be visitd');
         }
 
-        console.log('-----------------------------------------------------------------------------');
         Crawler.crawl();
     },
 
@@ -98,8 +99,8 @@ var Crawler = {
 
         } else {
             return asyncQueue.drain = function() {
-                console.log('Crawling completed');
-                console.log('Data saved in---', Crawler.fileName);
+                log.info('Crawling completed');
+                log.info('Data saved in---', Crawler.fileName);
                 return;
             }
         }
@@ -122,9 +123,8 @@ function startCrawler() {
 
         return Crawler.crawl();
     } else {
-        console.error('Correct format: node crawler.js <http://www.example.com> <csv_file_name>');
+        console.log('Correct format: node asyncCrawler.js <http://www.example.com> <csv_file_name>');
         return;
-
     }
 }
 

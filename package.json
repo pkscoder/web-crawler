@@ -18,6 +18,7 @@
   "homepage": "https://github.com/priyamkrshaw/web-crawler#readme",
   "dependencies": {
     "async": "^2.1.4",
+    "bunyan": "^1.8.5",
     "cheerio": "^0.22.0",
     "request": "^2.79.0",
     "url-parse": "^1.1.7",

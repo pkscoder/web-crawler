@@ -1,7 +1,9 @@
 var request = require('request'),
     cheerio = require('cheerio'),
     URL = require('url-parse'),
-    csv = require('ya-csv');
+    csv = require('ya-csv'),
+    bunyan = require("bunyan"),
+    log = bunyan.createLogger({ name: 'crawler' });
 
 var ARGS = process.argv,
     LIMIT = 5;
@@ -49,14 +51,13 @@ var Crawler = {
         });
 
         if (isPresent) {
-            console.log('Found ', isPresent, ' internal links on page either to be visited or already visited')
+            log.info('Found ', isPresent, ' internal links on page either to be visited or already visited')
         }
 
         if (count) {
-            console.log('Found ', count, ' internal links on page are to be visitd');
+            log.info('Found ', count, ' internal links on page are to be visitd');
         }
 
-        console.log('-----------------------------------------------------------------------------');
         Crawler.crawl();
     },
 
@@ -64,7 +65,7 @@ var Crawler = {
         Crawler.pagesVisited[url] = true; // Add page to our set
         Crawler.counter++;
 
-        console.log('Visiting page:', url);
+        log.info('Visiting page:', url);
 
         request(url, function(error, response, body) {
             Crawler.counter--;
@@ -76,7 +77,7 @@ var Crawler = {
                 return;
             }
 
-            console.log('Status code:', statusCode);
+            log.info('Status code:', statusCode);
 
             var $ = cheerio.load(body); // Parse the document body
 
@@ -93,8 +94,8 @@ var Crawler = {
             }
 
         } else if (!Crawler.counter) {
-            console.log('Crawling completed');
-            console.log('Data saved in---', Crawler.fileName);
+            log.info('Crawling completed');
+            log.info('Data saved in---', Crawler.fileName);
             return;
         }
     }
@@ -103,7 +104,7 @@ var Crawler = {
 function startCrawler() {
     var urlObj = new URL(ARGS[2]);
 
-    if (urlObj && urlObj.origin) {
+    if (urlObj && (urlObj.origin != 'null')) {
         Crawler.urlObj = urlObj;
         Crawler.fileName = (ARGS[3] ? ARGS[3] : 'crawler') + '.csv';
 
@@ -116,9 +117,8 @@ function startCrawler() {
 
         return Crawler.crawl();
     } else {
-        console.error('Correct format: node crawler.js <http://www.example.com> <csv_file_name>');
+        console.log('Correct format: node crawler.js <http://www.example.com> <csv_file_name>');
         return;
-
     }
 }
 
